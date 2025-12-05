@@ -1,6 +1,6 @@
 <?php
 // Inclure l'authentification
-include '../auth.php';
+include __DIR__ . '/../../auth.php';
 
 // Inclure la configuration
 require_once __DIR__ . '/../config.php';

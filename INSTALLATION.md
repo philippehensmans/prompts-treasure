@@ -1,79 +1,73 @@
 # Installation de Prompts Manager
 
-## Problème identifié ❌
+## ✅ Configuration actuelle
 
-Votre serveur **ne dispose pas de l'extension PDO_SQLite**. C'est pour cela que vous avez des erreurs 500.
+L'application utilise **SQLite** - tout est prêt à fonctionner !
 
-**Extensions disponibles sur votre serveur:**
-- ✓ PDO
-- ✓ PDO_MySQL
-- ✓ PDO_PostgreSQL
-- ✗ SQLite3
-- ✗ PDO_SQLite
+## Problème résolu
 
-## Solution : Utiliser MySQL
+Le problème des erreurs 500 venait du fichier `.htaccess` qui utilisait des modules Apache non disponibles sur votre serveur :
+- ✗ mod_headers (pour les en-têtes de sécurité)
+- ✗ mod_rewrite (pour les règles de réécriture)
+- ✗ mod_deflate (pour la compression)
+- ✗ mod_expires (pour le cache)
 
-### Étape 1 : Créer une base de données MySQL
+**Solution :** `.htaccess` simplifié avec seulement les protections essentielles.
 
-1. Connectez-vous à votre panneau d'hébergement (cPanel, Plesk, ou phpMyAdmin)
-2. Créez une nouvelle base de données MySQL nommée `prompts_db` (ou un autre nom de votre choix)
-3. Créez un utilisateur MySQL avec tous les privilèges sur cette base
-4. Notez les informations de connexion :
-   - Nom de la base
-   - Nom d'utilisateur
-   - Mot de passe
-   - Hôte (généralement `localhost`)
+## Accès à l'application
 
-### Étape 2 : Configurer l'application
+**URL :** https://www.k1m.be/exercices/prompts/
 
-1. Ouvrez le fichier `config.php`
-2. Modifiez les lignes 7-10 avec vos informations MySQL :
+L'application devrait maintenant fonctionner correctement avec :
+- ✓ Base de données SQLite (créée automatiquement)
+- ✓ Authentification via `auth.php`
+- ✓ Catégories par défaut
+- ✓ Protection des fichiers sensibles
 
-```php
-define('DB_HOST', 'localhost');          // Votre hôte MySQL
-define('DB_NAME', 'prompts_db');         // Nom de votre base
-define('DB_USER', 'votre_utilisateur');  // Votre utilisateur MySQL
-define('DB_PASS', 'votre_mot_de_passe'); // Votre mot de passe MySQL
-```
+## Fichiers protégés par .htaccess
 
-### Étape 3 : Tester l'installation
+- `config.php` - Bloqué en accès direct
+- `*.db`, `*.sqlite`, `*.sqlite3` - Fichiers de base de données protégés
+- Listage des répertoires désactivé
 
-1. Accédez à votre application : `https://www.k1m.be/exercices/prompts/`
-2. Les tables seront créées automatiquement
-3. Les catégories par défaut seront ajoutées
+## Structure de la base de données
 
-## Fichiers modifiés
+### Table `categories`
+- `id` : Identifiant unique
+- `name` : Nom de la catégorie
 
-J'ai déjà effectué les modifications suivantes :
+### Table `prompts`
+- `id` : Identifiant unique
+- `title` : Titre du prompt (obligatoire)
+- `explanation` : Explication détaillée
+- `code` : Code/texte du prompt (obligatoire)
+- `llm` : LLM spécifique (optionnel)
+- `category_id` : Catégorie associée
+- `suggested_by_email` : Email du suggéreur (optionnel)
+- `example_link` : Lien vers un exemple (optionnel)
+- `created_at` : Date de création
+- `updated_at` : Date de modification
 
-1. ✓ **includes/header.php** : Correction du chemin vers `auth.php` (de `/../..` vers `/..`)
-2. ✓ **config.php** : Prêt pour MySQL (vous devez juste ajouter vos identifiants)
-3. ✓ Sauvegarde de l'ancien config SQLite dans `config-sqlite-backup.php`
+## Fichiers de test (peuvent être supprimés en production)
 
-## Si vous avez accès SSH au serveur
+- `test-sqlite.php` - Vérification SQLite
+- `test-basic.php` - Test PHP basique
+- `test-html.html` - Test HTML
+- `test-paths.php` - Diagnostic chemins
+- `diagnostic-to-file.php` - Diagnostic complet
+- `phpinfo.php` - Informations PHP
+- `simple-test.php` - Test simple
 
-Si vous pouvez installer des extensions PHP, vous pouvez installer PDO_SQLite :
+## Nettoyage (optionnel)
 
-### Ubuntu/Debian :
+Pour supprimer les fichiers de diagnostic :
 ```bash
-sudo apt-get install php-sqlite3
-sudo systemctl restart apache2
+rm test-*.php test-*.html diagnostic-*.php diagnostic-*.txt phpinfo.php simple-test.php
 ```
 
-### CentOS/RHEL :
-```bash
-sudo yum install php-pdo-sqlite
-sudo systemctl restart httpd
-```
-
-Ensuite, restaurez l'ancien config :
-```bash
-cp config-sqlite-backup.php config.php
-```
-
-## Besoin d'aide ?
+## Support
 
 Si vous rencontrez des problèmes, vérifiez :
-- Que les identifiants MySQL sont corrects
-- Que l'utilisateur MySQL a tous les privilèges sur la base
-- Les logs d'erreur Apache/PHP pour plus de détails
+1. Permissions du dossier (lecture/écriture pour créer la base SQLite)
+2. Chemin vers `auth.php` dans `includes/header.php`
+3. Logs d'erreur Apache pour plus de détails

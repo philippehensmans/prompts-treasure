@@ -5,11 +5,10 @@ require_once 'includes/header.php';
 $db = getDB();
 
 // Récupérer les filtres
-$category_id = isset($_GET['category']) ? (int)$_GET['category'] : null;
 $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 // Construire la requête
-$sql = "SELECT p.*, c.name as category_name
+$sql = "SELECT p.*, c.name as category_name, c.id as category_id
         FROM prompts p
         LEFT JOIN categories c ON p.category_id = c.id";
 
@@ -24,20 +23,25 @@ if (!empty($search_query)) {
     $params[] = $search_param;
 }
 
-if ($category_id) {
-    $where_clauses[] = "p.category_id = ?";
-    $params[] = $category_id;
-}
-
 if (!empty($where_clauses)) {
     $sql .= " WHERE " . implode(" AND ", $where_clauses);
 }
 
-$sql .= " ORDER BY p.created_at DESC";
+$sql .= " ORDER BY c.name, p.title";
 
 $stmt = $db->prepare($sql);
 $stmt->execute($params);
 $prompts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Organiser les prompts par catégorie
+$prompts_by_category = [];
+foreach ($prompts as $prompt) {
+    $cat_name = $prompt['category_name'] ?: 'Sans catégorie';
+    if (!isset($prompts_by_category[$cat_name])) {
+        $prompts_by_category[$cat_name] = [];
+    }
+    $prompts_by_category[$cat_name][] = $prompt;
+}
 
 // Récupérer toutes les catégories
 $categories = $db->query("SELECT * FROM categories ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
@@ -53,83 +57,90 @@ $categories = $db->query("SELECT * FROM categories ORDER BY name")->fetchAll(PDO
             <?php endif; ?>
         </form>
     </div>
-
-    <div class="category-filter">
-        <label>Filtrer par catégorie :</label>
-        <a href="index.php" class="category-tag <?php echo !$category_id ? 'active' : ''; ?>">
-            Toutes
-        </a>
-        <?php foreach ($categories as $category): ?>
-            <a href="index.php?category=<?php echo $category['id']; ?>"
-               class="category-tag <?php echo $category_id == $category['id'] ? 'active' : ''; ?>">
-                <?php echo h($category['name']); ?>
-            </a>
-        <?php endforeach; ?>
-    </div>
 </div>
 
-<div class="prompts-grid">
-    <?php if (count($prompts) > 0): ?>
-        <?php foreach ($prompts as $prompt): ?>
-            <div class="prompt-card">
-                <div class="prompt-header">
-                    <h3><?php echo h($prompt['title']); ?></h3>
-                    <?php if ($prompt['category_name']): ?>
-                        <span class="badge"><?php echo h($prompt['category_name']); ?></span>
-                    <?php endif; ?>
-                </div>
+<?php if (count($prompts) > 0): ?>
+    <div class="prompts-by-category">
+        <?php foreach ($prompts_by_category as $cat_name => $cat_prompts): ?>
+            <div class="category-section">
+                <h2 class="category-title">
+                    📁 <?php echo h($cat_name); ?>
+                    <span class="prompt-count">(<?php echo count($cat_prompts); ?>)</span>
+                </h2>
 
-                <?php if (!empty($prompt['explanation'])): ?>
-                    <p class="prompt-explanation">
-                        <?php
-                        $explanation = h($prompt['explanation']);
-                        echo mb_strlen($explanation) > 150 ? mb_substr($explanation, 0, 150) . '...' : $explanation;
-                        ?>
-                    </p>
-                <?php endif; ?>
+                <div class="prompts-list">
+                    <?php foreach ($cat_prompts as $prompt): ?>
+                        <div class="prompt-item">
+                            <div class="prompt-name">
+                                <a href="view.php?id=<?php echo $prompt['id']; ?>">
+                                    <?php echo h($prompt['title']); ?>
+                                </a>
+                                <div class="prompt-actions">
+                                    <a href="form.php?id=<?php echo $prompt['id']; ?>" class="edit-icon" title="Modifier">✏️</a>
+                                </div>
+                            </div>
 
-                <?php if (!empty($prompt['llm'])): ?>
-                    <div class="llm-info">
-                        <strong>LLM :</strong> <?php echo h($prompt['llm']); ?>
-                    </div>
-                <?php endif; ?>
+                            <!-- Popup au survol -->
+                            <div class="prompt-popup">
+                                <div class="popup-header">
+                                    <h3><?php echo h($prompt['title']); ?></h3>
+                                    <?php if ($prompt['category_name']): ?>
+                                        <span class="badge"><?php echo h($prompt['category_name']); ?></span>
+                                    <?php endif; ?>
+                                </div>
 
-                <?php if (!empty($prompt['suggested_by_email'])): ?>
-                    <div class="llm-info">
-                        <strong>📧 Suggéré par :</strong> <?php echo h($prompt['suggested_by_email']); ?>
-                    </div>
-                <?php endif; ?>
+                                <?php if (!empty($prompt['explanation'])): ?>
+                                    <div class="popup-section">
+                                        <strong>Explication :</strong>
+                                        <p><?php echo nl2br(h($prompt['explanation'])); ?></p>
+                                    </div>
+                                <?php endif; ?>
 
-                <?php if (!empty($prompt['example_link'])): ?>
-                    <div class="llm-info">
-                        <strong>🔗 Exemple :</strong> <a href="<?php echo h($prompt['example_link']); ?>" target="_blank" rel="noopener noreferrer">Voir</a>
-                    </div>
-                <?php endif; ?>
+                                <?php if (!empty($prompt['llm'])): ?>
+                                    <div class="popup-section">
+                                        <strong>LLM :</strong> <?php echo h($prompt['llm']); ?>
+                                    </div>
+                                <?php endif; ?>
 
-                <div class="code-preview">
-                    <code>
-                        <?php
-                        $code = h($prompt['code']);
-                        echo mb_strlen($code) > 100 ? mb_substr($code, 0, 100) . '...' : $code;
-                        ?>
-                    </code>
-                </div>
+                                <?php if (!empty($prompt['suggested_by_email'])): ?>
+                                    <div class="popup-section">
+                                        <strong>📧 Suggéré par :</strong>
+                                        <a href="mailto:<?php echo h($prompt['suggested_by_email']); ?>">
+                                            <?php echo h($prompt['suggested_by_email']); ?>
+                                        </a>
+                                    </div>
+                                <?php endif; ?>
 
-                <div class="prompt-footer">
-                    <small>Créé le : <?php echo date('d/m/Y H:i', strtotime($prompt['created_at'])); ?></small>
-                    <div class="actions">
-                        <a href="view.php?id=<?php echo $prompt['id']; ?>" class="btn btn-small btn-primary">Voir</a>
-                        <a href="form.php?id=<?php echo $prompt['id']; ?>" class="btn btn-small btn-secondary">Modifier</a>
-                    </div>
+                                <?php if (!empty($prompt['example_link'])): ?>
+                                    <div class="popup-section">
+                                        <strong>🔗 Exemple :</strong>
+                                        <a href="<?php echo h($prompt['example_link']); ?>" target="_blank" rel="noopener noreferrer">
+                                            Voir l'exemple
+                                        </a>
+                                    </div>
+                                <?php endif; ?>
+
+                                <div class="popup-section">
+                                    <strong>Prompt :</strong>
+                                    <pre class="popup-code"><?php echo h($prompt['code']); ?></pre>
+                                </div>
+
+                                <div class="popup-footer">
+                                    <small>Créé le : <?php echo date('d/m/Y H:i', strtotime($prompt['created_at'])); ?></small>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
         <?php endforeach; ?>
-    <?php else: ?>
-        <div class="empty-state">
-            <p>Aucun prompt trouvé.</p>
-            <a href="form.php" class="btn btn-primary">Créer votre premier prompt</a>
-        </div>
-    <?php endif; ?>
-</div>
+    </div>
+<?php else: ?>
+    <div class="empty-state">
+        <p>Aucun prompt trouvé.</p>
+        <a href="form.php" class="btn btn-primary">Créer votre premier prompt</a>
+    </div>
+<?php endif; ?>
 
 <?php require_once 'includes/footer.php'; ?>
+

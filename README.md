@@ -1,6 +1,6 @@
 # Prompts Manager
 
-Application web pour stocker et gérer vos prompts utiles pour les LLMs (Large Language Models).
+Application web PHP pour stocker et gérer vos prompts utiles pour les LLMs (Large Language Models).
 
 ## Fonctionnalités
 
@@ -10,6 +10,7 @@ Application web pour stocker et gérer vos prompts utiles pour les LLMs (Large L
 - **LLM spécifique** : Indiquez pour quel LLM un prompt est optimisé (GPT-4, Claude, Gemini, etc.)
 - **Copie rapide** : Copiez vos prompts en un clic
 - **Base de données SQLite** : Stockage local, aucune connexion internet requise
+- **Intégration auth.php** : Compatible avec votre système d'authentification existant
 
 ## Structure des fiches
 
@@ -21,35 +22,57 @@ Chaque fiche de prompt contient :
 - **LLM concerné** : Le modèle de langage spécifique (optionnel)
 - **Catégorie** : Classification pour organiser vos prompts
 
+## Prérequis
+
+- PHP 7.4 ou supérieur avec PDO et l'extension SQLite3
+- Serveur web (Apache, Nginx, etc.) ou PHP built-in server
+- Un fichier `auth.php` dans le répertoire parent (pour l'authentification)
+
 ## Installation
 
-### Prérequis
+1. Clonez ou téléchargez ce repository dans votre serveur web
 
-- Python 3.8 ou supérieur
-- pip (gestionnaire de paquets Python)
+2. Assurez-vous que le fichier `auth.php` existe dans le répertoire parent :
+```
+/votre-site/
+    auth.php         <- Votre fichier d'authentification
+    prompts-treasure/
+        index.php
+        config.php
+        ...
+```
 
-### Étapes d'installation
-
-1. Clonez ou téléchargez ce repository
-
-2. Installez les dépendances :
+3. Configurez les permissions pour que PHP puisse créer la base de données :
 ```bash
-pip install -r requirements.txt
+chmod 755 /chemin/vers/prompts-treasure
 ```
 
-## Utilisation
+4. Accédez à l'application via votre navigateur :
+```
+http://votre-site.com/prompts-treasure/
+```
 
-1. Lancez l'application :
+La base de données SQLite sera créée automatiquement au premier accès.
+
+## Utilisation avec le serveur PHP intégré (développement)
+
+Pour tester localement :
+
 ```bash
-python app.py
+cd prompts-treasure
+php -S localhost:8000
 ```
 
-2. Ouvrez votre navigateur et accédez à :
-```
-http://localhost:5000
-```
+Puis ouvrez http://localhost:8000 dans votre navigateur.
 
-3. L'application est maintenant accessible !
+**Note** : Pour le développement, vous devrez créer un fichier `auth.php` temporaire dans le répertoire parent si vous n'en avez pas. Exemple minimal :
+```php
+<?php
+// auth.php minimal pour développement
+session_start();
+// Ajoutez votre logique d'authentification ici
+?>
+```
 
 ## Guide d'utilisation
 
@@ -97,18 +120,18 @@ http://localhost:5000
 
 ```
 prompts-treasure/
-├── app.py                  # Application Flask principale
-├── database.py             # Gestion de la base de données SQLite
-├── prompts.db              # Base de données (créée automatiquement)
-├── requirements.txt        # Dépendances Python
-├── templates/              # Templates HTML
-│   ├── base.html          # Template de base
-│   ├── index.html         # Page d'accueil
-│   ├── form.html          # Formulaire création/modification
-│   └── view.html          # Vue détaillée d'un prompt
-└── static/                # Fichiers statiques
-    └── css/
-        └── style.css      # Styles CSS
+├── index.php               # Page d'accueil avec liste des prompts
+├── form.php               # Formulaire création/modification
+├── view.php               # Vue détaillée d'un prompt
+├── delete.php             # Suppression d'un prompt
+├── add_category.php       # API pour ajouter une catégorie (AJAX)
+├── config.php             # Configuration et initialisation de la DB
+├── prompts.db             # Base de données SQLite (créée automatiquement)
+├── includes/
+│   ├── header.php        # En-tête avec inclusion auth.php
+│   └── footer.php        # Pied de page
+└── css/
+    └── style.css         # Styles CSS
 ```
 
 ## Base de données
@@ -116,46 +139,124 @@ prompts-treasure/
 L'application utilise SQLite avec deux tables principales :
 
 - **prompts** : Stocke les prompts avec leurs informations
+  - id (INTEGER PRIMARY KEY)
+  - title (TEXT NOT NULL)
+  - explanation (TEXT)
+  - code (TEXT NOT NULL)
+  - llm (TEXT)
+  - category_id (INTEGER)
+  - created_at (DATETIME)
+  - updated_at (DATETIME)
+
 - **categories** : Stocke les catégories de classification
+  - id (INTEGER PRIMARY KEY)
+  - name (TEXT NOT NULL UNIQUE)
 
 La base de données est créée automatiquement au premier lancement dans le fichier `prompts.db`.
+
+## Authentification
+
+L'application inclut automatiquement le fichier `../auth.php` dans chaque page via `includes/header.php`.
+
+Structure attendue :
+```
+/votre-repertoire-parent/
+    auth.php                    <- Votre système d'authentification
+    prompts-treasure/
+        index.php
+        form.php
+        ...
+```
+
+Si vous devez modifier le chemin vers `auth.php`, éditez le fichier `includes/header.php` :
+```php
+include '../auth.php';  // Modifiez ce chemin si nécessaire
+```
 
 ## Personnalisation
 
 ### Modifier les catégories par défaut
 
-Éditez le fichier `database.py` et modifiez la liste `default_categories` dans la méthode `init_db()`.
-
-### Changer le port
-
-Dans `app.py`, modifiez la ligne :
-```python
-app.run(debug=True, host='0.0.0.0', port=5000)
-```
+Éditez le fichier `config.php` et modifiez le tableau `$default_categories` dans la fonction `initDB()`.
 
 ### Personnaliser le style
 
-Modifiez le fichier `static/css/style.css` pour adapter les couleurs et le design.
+Modifiez le fichier `css/style.css` pour adapter les couleurs et le design.
+
+### Modifier le chemin de la base de données
+
+Dans `config.php`, changez la constante :
+```php
+define('DB_PATH', __DIR__ . '/prompts.db');
+```
 
 ## Sécurité
 
-**Important** : Cette application est conçue pour un usage local. Si vous souhaitez la déployer en production :
-
-1. Changez la clé secrète dans `app.py` :
-```python
-app.secret_key = 'votre-cle-secrete-changez-moi'
-```
-
-2. Désactivez le mode debug :
-```python
-app.run(debug=False, host='0.0.0.0', port=5000)
-```
-
-3. Utilisez un serveur WSGI comme Gunicorn ou uWSGI
+- L'application utilise PDO avec des requêtes préparées pour prévenir les injections SQL
+- Toutes les sorties HTML sont échappées avec `htmlspecialchars()`
+- Les sessions PHP sont utilisées pour les messages flash
+- L'authentification est gérée par votre fichier `auth.php`
 
 ## Sauvegarde
 
 Vos prompts sont stockés dans le fichier `prompts.db`. Pour sauvegarder vos données, copiez simplement ce fichier.
+
+```bash
+cp prompts.db prompts.db.backup
+```
+
+## Dépannage
+
+### Erreur de permissions
+
+Si vous obtenez une erreur lors de la création de la base de données :
+```bash
+chmod 755 /chemin/vers/prompts-treasure
+```
+
+### La base de données n'est pas créée
+
+Vérifiez que l'extension SQLite3 est activée dans PHP :
+```bash
+php -m | grep -i sqlite
+```
+
+### Erreur avec auth.php
+
+Si vous obtenez une erreur "Failed to open stream: auth.php", assurez-vous que le fichier existe dans le répertoire parent ou modifiez le chemin dans `includes/header.php`.
+
+## Configuration du serveur web
+
+### Apache
+
+Ajoutez un fichier `.htaccess` (optionnel) :
+```apache
+RewriteEngine On
+DirectoryIndex index.php
+```
+
+### Nginx
+
+Configuration de base :
+```nginx
+location /prompts-treasure {
+    index index.php;
+    try_files $uri $uri/ /index.php?$query_string;
+
+    location ~ \.php$ {
+        fastcgi_pass unix:/var/run/php/php-fpm.sock;
+        fastcgi_index index.php;
+        include fastcgi_params;
+    }
+}
+```
+
+## Technologies utilisées
+
+- PHP 7.4+
+- SQLite3 via PDO
+- HTML5 / CSS3
+- JavaScript (Vanilla) pour les interactions AJAX
 
 ## Licence
 

@@ -21,7 +21,20 @@ if (session_status() === PHP_SESSION_NONE) {
 <body>
     <nav class="navbar">
         <div class="container">
-            <h1><a href="index.php">📝 Prompts Manager</a></h1>
+            <h1>
+                <a href="index.php" class="logo-link">
+                    <?php if (file_exists(__DIR__ . '/../images/logo.png')): ?>
+                        <img src="images/logo.png" alt="Logo" class="logo">
+                    <?php elseif (file_exists(__DIR__ . '/../images/logo.jpg')): ?>
+                        <img src="images/logo.jpg" alt="Logo" class="logo">
+                    <?php elseif (file_exists(__DIR__ . '/../images/logo.svg')): ?>
+                        <img src="images/logo.svg" alt="Logo" class="logo">
+                    <?php else: ?>
+                        <span class="logo-text">📝</span>
+                    <?php endif; ?>
+                    <span>Prompts Manager</span>
+                </a>
+            </h1>
             <div class="nav-links">
                 <a href="index.php" class="btn btn-secondary">Liste des prompts</a>
                 <a href="form.php" class="btn btn-primary">Nouveau prompt</a>

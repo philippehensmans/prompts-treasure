@@ -34,6 +34,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $code = trim($_POST['code'] ?? '');
     $llm = trim($_POST['llm'] ?? '');
     $category_id = !empty($_POST['category_id']) ? (int)$_POST['category_id'] : null;
+    $suggested_by_email = trim($_POST['suggested_by_email'] ?? '');
+    $example_link = trim($_POST['example_link'] ?? '');
 
     // Validation
     if (empty($title) || empty($code)) {
@@ -44,16 +46,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Mise à jour
                 $stmt = $db->prepare("UPDATE prompts
                                      SET title = ?, explanation = ?, code = ?, llm = ?,
-                                         category_id = ?, updated_at = CURRENT_TIMESTAMP
+                                         category_id = ?, suggested_by_email = ?, example_link = ?,
+                                         updated_at = CURRENT_TIMESTAMP
                                      WHERE id = ?");
-                $stmt->execute([$title, $explanation, $code, $llm, $category_id, $prompt_id]);
+                $stmt->execute([$title, $explanation, $code, $llm, $category_id, $suggested_by_email, $example_link, $prompt_id]);
                 $_SESSION['success_message'] = 'Prompt modifié avec succès';
                 header('Location: view.php?id=' . $prompt_id);
             } else {
                 // Création
-                $stmt = $db->prepare("INSERT INTO prompts (title, explanation, code, llm, category_id)
-                                     VALUES (?, ?, ?, ?, ?)");
-                $stmt->execute([$title, $explanation, $code, $llm, $category_id]);
+                $stmt = $db->prepare("INSERT INTO prompts (title, explanation, code, llm, category_id, suggested_by_email, example_link)
+                                     VALUES (?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$title, $explanation, $code, $llm, $category_id, $suggested_by_email, $example_link]);
                 $_SESSION['success_message'] = 'Prompt créé avec succès';
                 header('Location: index.php');
             }
@@ -99,6 +102,22 @@ require_once 'includes/header.php';
                    value="<?php echo $prompt ? h($prompt['llm']) : ''; ?>"
                    placeholder="Ex: GPT-4, Claude 3, Gemini, etc.">
             <small>Laissez vide si le prompt fonctionne avec tous les LLMs</small>
+        </div>
+
+        <div class="form-group">
+            <label for="suggested_by_email">Email du suggéreur</label>
+            <input type="email" id="suggested_by_email" name="suggested_by_email"
+                   value="<?php echo $prompt ? h($prompt['suggested_by_email']) : ''; ?>"
+                   placeholder="Ex: nom@exemple.com">
+            <small>Email de la personne qui a suggéré ce prompt (optionnel)</small>
+        </div>
+
+        <div class="form-group">
+            <label for="example_link">Lien vers un exemple</label>
+            <input type="url" id="example_link" name="example_link"
+                   value="<?php echo $prompt ? h($prompt['example_link']) : ''; ?>"
+                   placeholder="Ex: https://exemple.com/demo">
+            <small>URL vers un exemple d'utilisation de ce prompt (optionnel)</small>
         </div>
 
         <div class="form-group">

@@ -94,6 +94,18 @@ $categories = $db->query("SELECT * FROM categories ORDER BY name")->fetchAll(PDO
                     </div>
                 <?php endif; ?>
 
+                <?php if (!empty($prompt['suggested_by_email'])): ?>
+                    <div class="llm-info">
+                        <strong>📧 Suggéré par :</strong> <?php echo h($prompt['suggested_by_email']); ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php if (!empty($prompt['example_link'])): ?>
+                    <div class="llm-info">
+                        <strong>🔗 Exemple :</strong> <a href="<?php echo h($prompt['example_link']); ?>" target="_blank" rel="noopener noreferrer">Voir</a>
+                    </div>
+                <?php endif; ?>
+
                 <div class="code-preview">
                     <code>
                         <?php

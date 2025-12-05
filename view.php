@@ -66,6 +66,20 @@ require_once 'includes/header.php';
         </div>
     <?php endif; ?>
 
+    <?php if (!empty($prompt['suggested_by_email'])): ?>
+        <div class="section">
+            <h3>Suggéré par</h3>
+            <p>📧 <a href="mailto:<?php echo h($prompt['suggested_by_email']); ?>"><?php echo h($prompt['suggested_by_email']); ?></a></p>
+        </div>
+    <?php endif; ?>
+
+    <?php if (!empty($prompt['example_link'])): ?>
+        <div class="section">
+            <h3>Exemple</h3>
+            <p>🔗 <a href="<?php echo h($prompt['example_link']); ?>" target="_blank" rel="noopener noreferrer"><?php echo h($prompt['example_link']); ?></a></p>
+        </div>
+    <?php endif; ?>
+
     <div class="section">
         <div class="section-header">
             <h3>Prompt</h3>

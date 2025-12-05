@@ -31,10 +31,25 @@ function initDB() {
         code TEXT NOT NULL,
         llm TEXT,
         category_id INTEGER,
+        suggested_by_email TEXT,
+        example_link TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (category_id) REFERENCES categories(id)
     )");
+
+    // Ajouter les colonnes si elles n'existent pas (pour les bases existantes)
+    try {
+        $db->exec("ALTER TABLE prompts ADD COLUMN suggested_by_email TEXT");
+    } catch(PDOException $e) {
+        // La colonne existe déjà, on ignore l'erreur
+    }
+
+    try {
+        $db->exec("ALTER TABLE prompts ADD COLUMN example_link TEXT");
+    } catch(PDOException $e) {
+        // La colonne existe déjà, on ignore l'erreur
+    }
 
     // Vérifier si des catégories existent
     $stmt = $db->query("SELECT COUNT(*) as count FROM categories");

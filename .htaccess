@@ -1,32 +1,13 @@
-# Configuration Apache pour Prompts Manager
-# Protection des fichiers et dossiers sensibles
+# Configuration minimale pour tester
+# Si cela fonctionne, on ajoutera progressivement les protections
 
-# Bloquer l'accès au répertoire .git et tous les fichiers cachés commençant par .
-<FilesMatch "^\.">
-    Require all denied
-</FilesMatch>
-
-<DirectoryMatch "^\.|\/\.">
-    Require all denied
-</DirectoryMatch>
-
-# Bloquer l'accès direct au fichier de configuration
+# Bloquer l'accès au fichier de configuration
 <Files "config.php">
     Require all denied
 </Files>
 
-# Bloquer l'accès aux bases de données SQLite
+# Bloquer l'accès aux bases de données
 <FilesMatch "\.(db|sqlite|sqlite3)$">
-    Require all denied
-</FilesMatch>
-
-# Bloquer l'accès au dossier includes/
-<DirectoryMatch "^.*/includes$">
-    Require all denied
-</DirectoryMatch>
-
-# Bloquer l'accès aux fichiers de documentation et autres fichiers non-PHP
-<FilesMatch "^(README\.md|First|LICENSE|CHANGELOG)$">
     Require all denied
 </FilesMatch>
 
@@ -35,62 +16,3 @@ DirectoryIndex index.php
 
 # Protection contre le listage des répertoires
 Options -Indexes
-
-# Protection contre l'injection de scripts
-<IfModule mod_headers.c>
-    # Protection XSS
-    Header set X-XSS-Protection "1; mode=block"
-
-    # Protection contre le clickjacking
-    Header set X-Frame-Options "SAMEORIGIN"
-
-    # Empêcher le MIME-sniffing
-    Header set X-Content-Type-Options "nosniff"
-
-    # Politique de sécurité du contenu (CSP) - ajustez selon vos besoins
-    Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
-</IfModule>
-
-# Désactiver l'affichage des erreurs PHP en production (décommentez si nécessaire)
-# php_flag display_errors off
-# php_flag display_startup_errors off
-
-# Limiter la taille des uploads (ajustez selon vos besoins)
-# php_value upload_max_filesize 5M
-# php_value post_max_size 5M
-
-# Protection contre les injections
-<IfModule mod_rewrite.c>
-    RewriteEngine On
-
-    # Bloquer les requêtes suspectes
-    RewriteCond %{QUERY_STRING} (<|%3C).*script.*(>|%3E) [NC,OR]
-    RewriteCond %{QUERY_STRING} GLOBALS(=|\[|\%[0-9A-Z]{0,2}) [OR]
-    RewriteCond %{QUERY_STRING} _REQUEST(=|\[|\%[0-9A-Z]{0,2})
-    RewriteRule ^(.*)$ - [F,L]
-
-    # Bloquer les tentatives d'accès aux fichiers de sauvegarde
-    RewriteCond %{REQUEST_URI} ^.*\.(bak|backup|swp|old|~)$ [NC]
-    RewriteRule ^(.*)$ - [F,L]
-</IfModule>
-
-# Types MIME pour les fichiers CSS et JS
-<IfModule mod_mime.c>
-    AddType text/css .css
-    AddType application/javascript .js
-</IfModule>
-
-# Compression Gzip pour améliorer les performances (optionnel)
-<IfModule mod_deflate.c>
-    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript
-</IfModule>
-
-# Cache des fichiers statiques (optionnel)
-<IfModule mod_expires.c>
-    ExpiresActive On
-    ExpiresByType text/css "access plus 1 month"
-    ExpiresByType application/javascript "access plus 1 month"
-    ExpiresByType image/gif "access plus 1 year"
-    ExpiresByType image/jpeg "access plus 1 year"
-    ExpiresByType image/png "access plus 1 year"
-</IfModule>

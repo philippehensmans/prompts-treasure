@@ -1,0 +1,26 @@
+=== DIAGNOSTIC REPORT ===
+Generated: 2025-12-05 09:38:11
+
+PHP Version: 8.4.15
+__DIR__: /home/user/prompts-treasure
+__FILE__: /home/user/prompts-treasure/diagnostic-to-file.php
+
+=== Testing auth.php paths ===
+/home/user/prompts-treasure/../auth.php => EXISTS ✓
+/home/user/prompts-treasure/../../auth.php => NOT FOUND ✗
+/www/exercices/auth.php => NOT FOUND ✗
+/www/auth.php => NOT FOUND ✗
+/var/www/exercices/auth.php => NOT FOUND ✗
+/home/user/auth.php => EXISTS ✓
+
+=== Testing config.php ===
+/home/user/prompts-treasure/config.php => EXISTS ✓
+
+=== PHP Extensions ===
+PDO: YES ✓
+SQLite3: NO ✗
+PDO_SQLITE: NO ✗
+
+=== Parent directory files ===
+Parent directory: /home/user
+Files: auth.php, prompts-treasure

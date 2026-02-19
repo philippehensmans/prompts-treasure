@@ -1,0 +1,18 @@
+# Configuration minimale pour tester
+# Si cela fonctionne, on ajoutera progressivement les protections
+
+# Bloquer l'accès au fichier de configuration
+<Files "config.php">
+    Require all denied
+</Files>
+
+# Bloquer l'accès aux bases de données
+<FilesMatch "\.(db|sqlite|sqlite3)$">
+    Require all denied
+</FilesMatch>
+
+# Index par défaut
+DirectoryIndex index.php
+
+# Protection contre le listage des répertoires
+Options -Indexes
